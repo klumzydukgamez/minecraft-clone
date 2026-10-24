@@ -6,10 +6,13 @@
 
 #include "mc_third_party.h"
 #include "mc_constants.h"
+#include "mc_camera.h"
 
 typedef struct {
 	SDL_Window* window;
 	SDL_GLContext glContext;
+
+	mc_camera camera;
 } mc_state;
 
 bool mc_init_state(mc_state* state);

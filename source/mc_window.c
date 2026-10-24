@@ -24,6 +24,10 @@ bool mc_init_window(SDL_Window** window, SDL_GLContext* glContext) {
 		return false;
 	}
 
+	if (!SDL_SetWindowRelativeMouseMode(*window, true)) {
+		return false;
+	}
+
 	*glContext = SDL_GL_CreateContext(*window);
 	if (!*glContext) {
 		return false;
