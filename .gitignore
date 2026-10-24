@@ -1,0 +1,8 @@
+third_party/SDL
+third_party/cglm
+
+build
+build_out
+
+.cache
+
