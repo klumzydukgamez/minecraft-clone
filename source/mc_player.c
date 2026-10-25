@@ -47,54 +47,60 @@ void mc_update_player(mc_player* player, mc_player_input* input) {
 	float yaw = glm_rad(player->yaw);
 	float pitch = glm_rad(player->pitch);
 
-	vec3 front;
-	front[0] = SDL_cosf(yaw) * SDL_cosf(pitch);
-	front[1] = SDL_sinf(pitch);
-	front[2] = SDL_sinf(yaw) * SDL_cosf(pitch);
-	glm_vec3_normalize_to(front, player->front);
+	player->front[0] = SDL_cosf(yaw) * SDL_cosf(pitch);
+	player->front[1] = SDL_sinf(pitch);
+	player->front[2] = SDL_sinf(yaw) * SDL_cosf(pitch);
+	glm_vec3_normalize(player->front);
 
-	vec3 up = {0.0f, 1.0f, 0.0f};
+	vec3 globalUp = {0.0f, 1.0f, 0.0f};
 
-	glm_vec3_cross(player->front, up, player->right);
+	glm_vec3_cross(player->front, globalUp, player->right);
 	glm_vec3_normalize(player->right);
 
 	glm_vec3_cross(player->right, player->front, player->up);
 	glm_vec3_normalize(player->up);
 
-	vec3 flatFront = {player->front[0], 0.0f, player->front[2]};
-	vec3 flatRight = {player->right[0], 0.0f, player->right[2]};
-	if (glm_vec3_norm2(flatFront) > 0.0f)
-		glm_vec3_normalize(flatFront);
-	if (glm_vec3_norm2(flatRight) > 0.0f)
-		glm_vec3_normalize(flatRight);
+	vec3 moveFront = {player->front[0], 0.0f, player->front[2]};
+	vec3 moveRight = {player->right[0], 0.0f, player->right[2]};
+	vec3 moveUp = {0.0f, player->up[1], 0.0f};
+	if (glm_vec3_norm2(moveFront) > 0.0f)
+		glm_vec3_normalize(moveFront);
+	if (glm_vec3_norm2(moveRight) > 0.0f)
+		glm_vec3_normalize(moveRight);
+	if (glm_vec3_norm2(moveUp) > 0.0f)
+		glm_vec3_normalize(moveUp);
 
-	player->velocity[0] *= MC_PLAYER_FRICTION;
-	player->velocity[2] *= MC_PLAYER_FRICTION;
+	glm_vec3_scale(player->velocity, MC_PLAYER_FRICTION, player->velocity);
 
 	vec3 direction;
 	glm_vec3_zero(direction);
 	if (input->forward)
-		glm_vec3_add(direction, flatFront, direction);
+		glm_vec3_add(direction, moveFront, direction);
 	if (input->backward)
-		glm_vec3_sub(direction, flatFront, direction);
+		glm_vec3_sub(direction, moveFront, direction);
 	if (input->left)
-		glm_vec3_sub(direction, flatRight, direction);
+		glm_vec3_sub(direction, moveRight, direction);
 	if (input->right)
-		glm_vec3_add(direction, flatRight, direction);
+		glm_vec3_add(direction, moveRight, direction);
+	if (input->up)
+		glm_vec3_add(direction, moveUp, direction);
+	if (input->down)
+		glm_vec3_sub(direction, moveUp, direction);
 
 	if (glm_vec3_norm2(direction) > 0.0f) {
 		glm_vec3_normalize(direction);
-		player->velocity[0] += direction[0] * MC_PLAYER_ACCELERATION;
-		player->velocity[2] += direction[2] * MC_PLAYER_ACCELERATION;
-		float length = SDL_sqrtf(player->velocity[0] * player->velocity[0] + player->velocity[2] * player->velocity[2]);
+		glm_vec3_scale(direction, MC_PLAYER_ACCELERATION, direction);
+		glm_vec3_add(player->velocity, direction, player->velocity);
+		float length = glm_vec3_norm(player->velocity);
 		if (length > MC_PLAYER_MAX_SPEED) {
 			float scale = MC_PLAYER_MAX_SPEED / length;
-			player->velocity[0] *= scale;
-			player->velocity[1] *= scale;
+			glm_vec3_scale(player->velocity, scale, player->velocity);
 		}
 	} else {
 		if (SDL_fabsf((player->velocity[0]) < 0.01f))
 			player->velocity[0] = 0.0f;
+		if (SDL_fabsf(player->velocity[1]) < 0.01f)
+			player->velocity[1] = 0.0f;
 		if (SDL_fabsf(player->velocity[2]) < 0.01f)
 			player->velocity[2] = 0.0f;
 	}

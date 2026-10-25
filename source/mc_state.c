@@ -64,6 +64,12 @@ bool mc_poll_state(mc_state* state, SDL_Event* event) {
 				case SDL_SCANCODE_D:
 					state->playerInput.right = true;
 					break;
+				case SDL_SCANCODE_SPACE:
+					state->playerInput.up = true;
+					break;
+				case SDL_SCANCODE_LCTRL:
+					state->playerInput.down = true;
+					break;
 				case SDL_SCANCODE_ESCAPE:
 					return false;
 				default:
@@ -83,6 +89,12 @@ bool mc_poll_state(mc_state* state, SDL_Event* event) {
 					break;
 				case SDL_SCANCODE_D:
 					state->playerInput.right = false;
+					break;
+				case SDL_SCANCODE_SPACE:
+					state->playerInput.up = false;
+					break;
+				case SDL_SCANCODE_LCTRL:
+					state->playerInput.down = false;
 					break;
 				default:
 					break;

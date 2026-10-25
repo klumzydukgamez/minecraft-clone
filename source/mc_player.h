@@ -38,7 +38,8 @@ typedef struct {
 	bool backward;
 	bool left;
 	bool right;
-	bool sprint;
+	bool up;
+	bool down;
 } mc_player_input;
 
 void mc_init_player(mc_player* player);
