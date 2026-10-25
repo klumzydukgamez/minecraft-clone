@@ -6,13 +6,14 @@
 
 #include "mc_third_party.h"
 #include "mc_constants.h"
-#include "mc_camera.h"
+#include "mc_player.h"
 
 typedef struct {
 	SDL_Window* window;
 	SDL_GLContext glContext;
 
-	mc_camera camera;
+	mc_player_input playerInput;
+	mc_player player;
 
 	GLuint vao;
 	GLuint testProgram;

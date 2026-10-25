@@ -17,7 +17,7 @@ bool mc_init_state(mc_state* state) {
 		return false;
 	}
 
-	mc_init_camera(&state->camera);
+	mc_init_player(&state->player);
 
 	if (!mc_compile_shader(mc_asset_test_vert, mc_asset_test_frag, &state->testProgram)) {
 		SDL_Log("Failed to compile shader (mc_test.vert, mc_test.frag)");
@@ -33,8 +33,48 @@ bool mc_poll_state(mc_state* state, SDL_Event* event) {
 	switch (event->type) {
 		case SDL_EVENT_QUIT:
 			return false;
+		case SDL_EVENT_KEY_DOWN:
+			switch (event->key.scancode) {
+				case (SDL_SCANCODE_W):
+					state->playerInput.forward = true;
+					break;
+				case (SDL_SCANCODE_S):
+					state->playerInput.backward = true;
+					break;
+				case (SDL_SCANCODE_A):
+					state->playerInput.left = true;
+					break;
+				case (SDL_SCANCODE_D):
+					state->playerInput.right = true;
+					break;
+				default:
+					break;
+			}
+			break;
+		case SDL_EVENT_KEY_UP:
+			switch (event->key.scancode) {
+				case (SDL_SCANCODE_W):
+					state->playerInput.forward = false;
+					break;
+				case (SDL_SCANCODE_S):
+					state->playerInput.backward = false;
+					break;
+				case (SDL_SCANCODE_A):
+					state->playerInput.left = false;
+					break;
+				case (SDL_SCANCODE_D):
+					state->playerInput.right = false;
+					break;
+				default:
+					break;
+			}
+			break;
+
 		case SDL_EVENT_MOUSE_MOTION:
-			mc_update_camera(&state->camera, event->motion.xrel, event->motion.yrel);
+			state->playerInput.xrel = event->motion.xrel;
+			state->playerInput.yrel = event->motion.yrel;
+			break;
+		default:
 			break;
 	}
 
@@ -46,16 +86,13 @@ bool mc_iterate_state(mc_state* state) {
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	static float time = 0;
-	time++;
-	state->camera.targetFov = 90 + (SDL_sinf(time * 0.06)) * 50;
-
-	mc_calculate_camera(&state->camera);
-	SDL_Log("%f", state->camera.targetFov);
+	mc_update_player(&state->player, &state->playerInput);
+	state->playerInput.xrel = 0;
+	state->playerInput.yrel = 0;
 
 	glBindVertexArray(state->vao);
 	glUseProgram(state->testProgram);
-	glUniformMatrix4fv(glGetUniformLocation(state->testProgram, "uProjectionView"), 1, GL_FALSE, (const GLfloat*)state->camera.projectionView);
+	glUniformMatrix4fv(glGetUniformLocation(state->testProgram, "uProjectionView"), 1, GL_FALSE, (const GLfloat*)state->player.projectionView);
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 
 	if (!SDL_GL_SwapWindow(state->window)) {

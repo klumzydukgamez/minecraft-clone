@@ -4,9 +4,16 @@
 #if !defined MC_CONSTANTS_H
 #define MC_CONSTANTS_H
 
-#define MC_WINDOW_WIDTH 1280
-#define MC_WINDOW_HEIGHT 720
+constexpr int MC_WINDOW_WIDTH = 1280;
+constexpr int MC_WINDOW_HEIGHT = 720;
+constexpr float MC_WINDOW_RATIO = (float)MC_WINDOW_WIDTH / (float)MC_WINDOW_HEIGHT;
 
-#define MC_CAMERA_FOV 90
+constexpr float MC_PLAYER_FOV = 90;
+constexpr float MC_PLAYER_SENSITIVITY = 1.0f;
+constexpr float MC_PLAYER_HEIGHT = 1.5f;
+
+constexpr float MC_PLAYER_ACCELERATION = 0.6f;
+constexpr float MC_PLAYER_MAX_SPEED = 2.0f;
+constexpr float MC_PLAYER_FRICTION = 0.1f;
 
 #endif /* MC_CONSTANTS_H */
