@@ -22,9 +22,8 @@ constexpr float MC_PLAYER_ACCELERATION = 0.2f;
 constexpr float MC_PLAYER_MAX_SPEED = 5.0f;
 constexpr float MC_PLAYER_FRICTION = 0.1f;
 
-constexpr size_t MC_CHUNK_WIDTH = 16;
-constexpr size_t MC_CHUNK_HEIGHT = 16;
-
-constexpr size_t MC_CHUNK_RADIUS = 16;
+constexpr int MC_CHUNK_WIDTH = 16;
+constexpr int MC_CHUNK_HEIGHT = 16;
+constexpr int MC_CHUNK_BLOCK_COUNT = MC_CHUNK_WIDTH * MC_CHUNK_WIDTH * MC_CHUNK_HEIGHT;
 
 #endif /* MC_CONSTANTS_H */

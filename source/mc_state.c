@@ -17,16 +17,31 @@ bool mc_init_state(mc_state* state) {
 		return false;
 	}
 
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
+
+	state->lastTicks = SDL_GetTicksNS();
+
 	mc_init_player(&state->player);
 
-	if (!mc_compile_shader(mc_asset_test_vert, mc_asset_test_frag, &state->testProgram)) {
+	if (!mc_compile_shader(mc_asset_chunk_vert, mc_asset_chunk_frag, &state->chunkProgram)) {
 		SDL_Log("Failed to compile shader (mc_test.vert, mc_test.frag)");
 		return false;
 	}
+	state->chunkProjectionViewLocation = glGetUniformLocation(state->chunkProgram, "uProjectionView");
+	if (state->chunkProjectionViewLocation == -1) {
+		SDL_Log("Failed to get GL uniform location (uProjectionView).");
+		return false;
+	}
 
-	glGenVertexArrays(1, &state->vao);
-
-	state->lastTicks = SDL_GetTicksNS();
+	if (!mc_init_chunk(&state->chunk)) {
+		SDL_Log("Failed to init chunk.");
+		return false;
+	}
+	if (!mc_update_chunk(&state->chunk)) {
+		SDL_Log("Failed to update chunk.");
+		return false;
+	}
 
 	return true;
 }
@@ -116,10 +131,12 @@ bool mc_iterate_state(mc_state* state) {
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	glBindVertexArray(state->vao);
-	glUseProgram(state->testProgram);
-	glUniformMatrix4fv(glGetUniformLocation(state->testProgram, "uProjectionView"), 1, GL_FALSE, (const GLfloat*)state->player.projectionView);
-	glDrawArrays(GL_TRIANGLES, 0, 36);
+	glUseProgram(state->chunkProgram);
+	glUniformMatrix4fv(state->chunkProjectionViewLocation, 1, GL_FALSE, (GLfloat*)state->player.projectionView);
+	glBindVertexArray(state->chunk.vertexArray);
+	glDrawArrays(GL_TRIANGLES, 0, state->chunk.vertexCount);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
 
 	if (!SDL_GL_SwapWindow(state->window)) {
 		SDL_Log("Failed to swap window buffers.");
@@ -128,7 +145,8 @@ bool mc_iterate_state(mc_state* state) {
 }
 
 void mc_cleanup_state(mc_state* state) {
-	glDeleteVertexArrays(1, &state->vao);
-	glDeleteProgram(state->testProgram);
+	mc_cleanup_chunk(&state->chunk);
+	if (state->chunkProgram)
+		glDeleteProgram(state->chunkProgram);
 	mc_cleanup_window(&state->window, &state->glContext);
 }

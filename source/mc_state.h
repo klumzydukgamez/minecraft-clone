@@ -24,10 +24,10 @@ typedef struct {
 	mc_player_input playerInput;
 	mc_player player;
 
-	GLuint vao;
-	GLuint testProgram;
+	GLuint chunkProgram;
+	GLint chunkProjectionViewLocation;
 
-	mc_chunk chunks[MC_CHUNK_RADIUS][MC_CHUNK_RADIUS];
+	mc_chunk chunk;
 } mc_state;
 
 bool mc_init_state(mc_state* state);

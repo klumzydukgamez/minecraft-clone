@@ -3,11 +3,11 @@
 
 #include "mc_assets.h"
 
-static const GLchar asset_test_vert[] = {
-#embed "mc_test.vert" suffix(, 0)
+static const GLchar asset_chunk_vert[] = {
+#embed "mc_chunk.vert" suffix(, 0)
 };
-static const GLchar asset_test_frag[] = {
-#embed "mc_test.frag" suffix(, 0)
+static const GLchar asset_chunk_frag[] = {
+#embed "mc_chunk.frag" suffix(, 0)
 };
-const GLchar* const mc_asset_test_vert = asset_test_vert;
-const GLchar* const mc_asset_test_frag = asset_test_frag;
+const GLchar* const mc_asset_chunk_vert = asset_chunk_vert;
+const GLchar* const mc_asset_chunk_frag = asset_chunk_frag;
