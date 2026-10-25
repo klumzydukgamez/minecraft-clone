@@ -8,7 +8,9 @@
 
 typedef enum : uint16_t {
 	MC_AIR_BLOCK,
-	MC_DIRT_BLOCK
+	MC_DIRT_BLOCK,
+	MC_GRASS_BLOCK,
+	MC_STONE_BLOCK,
 } mc_block;
 
 #endif /* MC_BLOCK_H */

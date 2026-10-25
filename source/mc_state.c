@@ -4,6 +4,7 @@
 #include "mc_state.h"
 #include "mc_window.h"
 #include "mc_shader.h"
+#include "mc_texture.h"
 #include "mc_assets.h"
 
 bool mc_init_state(mc_state* state) {
@@ -22,15 +23,23 @@ bool mc_init_state(mc_state* state) {
 
 	state->lastTicks = SDL_GetTicksNS();
 
-	mc_init_player(&state->player);
+	if (!mc_init_asset_png(mc_asset_blocks_png, mc_asset_blocks_png_size, &state->blockTexture)) {
+		SDL_Log("Failed to init asset (mc_blocks.png).");
+		return false;
+	}
 
 	if (!mc_compile_shader(mc_asset_chunk_vert, mc_asset_chunk_frag, &state->chunkProgram)) {
 		SDL_Log("Failed to compile shader (mc_test.vert, mc_test.frag)");
 		return false;
 	}
-	state->chunkProjectionViewLocation = glGetUniformLocation(state->chunkProgram, "uProjectionView");
-	if (state->chunkProjectionViewLocation == -1) {
+	state->chunkUniformProjectionViewLocation = glGetUniformLocation(state->chunkProgram, "uProjectionView");
+	if (state->chunkUniformProjectionViewLocation == -1) {
 		SDL_Log("Failed to get GL uniform location (uProjectionView).");
+		return false;
+	}
+	state->chunkUniformTextureLocation = glGetUniformLocation(state->chunkProgram, "uTexture");
+	if (state->chunkUniformTextureLocation == -1) {
+		SDL_Log("Failed to get GL uniform location (uTexture).");
 		return false;
 	}
 
@@ -42,6 +51,8 @@ bool mc_init_state(mc_state* state) {
 		SDL_Log("Failed to update chunk.");
 		return false;
 	}
+
+	mc_init_player(&state->player);
 
 	return true;
 }
@@ -69,6 +80,11 @@ bool mc_poll_state(mc_state* state, SDL_Event* event) {
 					break;
 				case SDL_SCANCODE_LCTRL:
 					state->playerInput.down = true;
+					break;
+				case SDL_SCANCODE_M:
+					state->player.mode++;
+					if (state->player.mode > MC_SPECTATOR_MODE)
+						state->player.mode = MC_SURVIVAL_MODE;
 					break;
 				case SDL_SCANCODE_ESCAPE:
 					return false;
@@ -144,7 +160,10 @@ bool mc_iterate_state(mc_state* state) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glUseProgram(state->chunkProgram);
-	glUniformMatrix4fv(state->chunkProjectionViewLocation, 1, GL_FALSE, (GLfloat*)state->player.projectionView);
+	glUniformMatrix4fv(state->chunkUniformProjectionViewLocation, 1, GL_FALSE, (GLfloat*)state->player.projectionView);
+	glUniform1i(state->chunkUniformTextureLocation, 0);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, state->blockTexture);
 	glBindVertexArray(state->chunk.vertexArray);
 	glDrawArrays(GL_TRIANGLES, 0, state->chunk.vertexCount);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -160,5 +179,7 @@ void mc_cleanup_state(mc_state* state) {
 	mc_cleanup_chunk(&state->chunk);
 	if (state->chunkProgram)
 		glDeleteProgram(state->chunkProgram);
+	if (state->blockTexture)
+		glDeleteTextures(1, &state->blockTexture);
 	mc_cleanup_window(&state->window, &state->glContext);
 }

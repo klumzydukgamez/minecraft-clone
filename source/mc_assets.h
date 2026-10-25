@@ -9,4 +9,7 @@
 extern const GLchar* const mc_asset_chunk_vert;
 extern const GLchar* const mc_asset_chunk_frag;
 
+extern const uint8_t* const mc_asset_blocks_png;
+extern const size_t mc_asset_blocks_png_size;
+
 #endif /* MC_ASSETS_H */

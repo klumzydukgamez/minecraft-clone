@@ -21,13 +21,16 @@ typedef struct {
 	uint32_t fpsCount;
 	uint32_t fps;
 
-	mc_player_input playerInput;
-	mc_player player;
+	GLuint blockTexture;
 
 	GLuint chunkProgram;
-	GLint chunkProjectionViewLocation;
+	GLint chunkUniformProjectionViewLocation;
+	GLint chunkUniformTextureLocation;
 
 	mc_chunk chunk;
+
+	mc_player_input playerInput;
+	mc_player player;
 } mc_state;
 
 bool mc_init_state(mc_state* state);

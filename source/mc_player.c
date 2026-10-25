@@ -30,6 +30,27 @@ void mc_init_player(mc_player* player) {
 }
 
 void mc_update_player(mc_player* player, mc_player_input* input) {
+	switch (player->mode) {
+		case MC_SURVIVAL_MODE:
+			mc_update_survival_player(player, input);
+			break;
+		case MC_CREATIVE_MODE:
+			mc_update_creative_player(player, input);
+			break;
+		case MC_SPECTATOR_MODE:
+			mc_update_spectator_player(player, input);
+			break;
+		default:
+			SDL_Log("Invalid player move.");
+			break;
+	}
+}
+void mc_update_survival_player(mc_player* player, mc_player_input* input) {
+}
+void mc_update_creative_player(mc_player* player, mc_player_input* input) {
+}
+
+void mc_update_spectator_player(mc_player* player, mc_player_input* input) {
 	if (SDL_fabsf(player->sensitivity - player->targetSensitivity) >= 0.001f)
 		player->sensitivity = glm_lerp(player->sensitivity, player->targetSensitivity, 0.25f);
 	else

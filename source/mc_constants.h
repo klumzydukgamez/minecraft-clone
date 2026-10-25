@@ -14,6 +14,13 @@ constexpr Uint64 MC_MAX_TICKS = 250'000'000;
 constexpr Uint64 MC_ONE_SECOND = 1'000'000'000;
 constexpr Uint64 MC_FRAME_TICKS = 16'666'666;
 
+constexpr float MC_BLOCK_FACE_U = 1.0f / 16.0f;
+constexpr float MC_BLOCK_FACE_V = 1.0f / 16.0f;
+
+constexpr int MC_CHUNK_WIDTH = 16;
+constexpr int MC_CHUNK_HEIGHT = 16;
+constexpr int MC_CHUNK_BLOCK_COUNT = MC_CHUNK_WIDTH * MC_CHUNK_WIDTH * MC_CHUNK_HEIGHT;
+
 constexpr float MC_PLAYER_FOV = 80;
 constexpr float MC_PLAYER_SENSITIVITY = 1.5f;
 constexpr float MC_PLAYER_HEIGHT = 1.5f;
@@ -21,9 +28,5 @@ constexpr float MC_PLAYER_HEIGHT = 1.5f;
 constexpr float MC_PLAYER_ACCELERATION = 0.2f;
 constexpr float MC_PLAYER_MAX_SPEED = 5.0f;
 constexpr float MC_PLAYER_FRICTION = 0.1f;
-
-constexpr int MC_CHUNK_WIDTH = 16;
-constexpr int MC_CHUNK_HEIGHT = 16;
-constexpr int MC_CHUNK_BLOCK_COUNT = MC_CHUNK_WIDTH * MC_CHUNK_WIDTH * MC_CHUNK_HEIGHT;
 
 #endif /* MC_CONSTANTS_H */

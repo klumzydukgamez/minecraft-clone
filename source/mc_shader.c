@@ -45,30 +45,31 @@ bool mc_compile_shader(
 		return false;
 	}
 
-	*program = glCreateProgram();
-	if (!*program) {
+	GLuint prog = glCreateProgram();
+	if (!prog) {
 		SDL_Log("Failed to create GL program.");
 		glDeleteShader(vertex);
 		glDeleteShader(fragment);
 		return false;
 	}
-	glAttachShader(*program, vertex);
-	glAttachShader(*program, fragment);
-	glLinkProgram(*program);
-	glDetachShader(*program, vertex);
-	glDetachShader(*program, fragment);
+	glAttachShader(prog, vertex);
+	glAttachShader(prog, fragment);
+	glLinkProgram(prog);
+	glDetachShader(prog, vertex);
+	glDetachShader(prog, fragment);
 	glDeleteShader(vertex);
 	glDeleteShader(fragment);
 	int programResult = 0;
-	glGetProgramiv(*program, GL_LINK_STATUS, &programResult);
+	glGetProgramiv(prog, GL_LINK_STATUS, &programResult);
 	if (!programResult) {
 		SDL_Log("Failed to link GL program.");
 		GLchar log[256] = {};
-		glGetShaderInfoLog(*program, sizeof(log), nullptr, log);
+		glGetShaderInfoLog(prog, sizeof(log), nullptr, log);
 		SDL_Log("%s", log);
-		glDeleteProgram(*program);
+		glDeleteProgram(prog);
 		return false;
 	}
 
+	*program = prog;
 	return true;
 }
