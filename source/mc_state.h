@@ -7,16 +7,27 @@
 #include "mc_third_party.h"
 #include "mc_constants.h"
 #include "mc_player.h"
+#include "mc_chunk.h"
 
 typedef struct {
 	SDL_Window* window;
 	SDL_GLContext glContext;
+
+	Uint64 lastTicks;
+	Uint64 accumulatedTicks;
+	Uint64 ticks;
+
+	Uint64 fpsTimer;
+	uint32_t fpsCount;
+	uint32_t fps;
 
 	mc_player_input playerInput;
 	mc_player player;
 
 	GLuint vao;
 	GLuint testProgram;
+
+	mc_chunk chunks[MC_CHUNK_RADIUS][MC_CHUNK_RADIUS];
 } mc_state;
 
 bool mc_init_state(mc_state* state);

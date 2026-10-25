@@ -35,8 +35,10 @@ void mc_update_player(mc_player* player, mc_player_input* input) {
 	else
 		player->sensitivity = player->targetSensitivity;
 
-	player->yaw += input->xrel * player->sensitivity;
-	player->pitch += -input->yrel * player->sensitivity;
+	float f = player->sensitivity * 0.6f + 0.2f;
+	float sensitivity = f * f * f * 0.15f;
+	player->yaw += input->xrel * sensitivity;
+	player->pitch += -input->yrel * sensitivity;
 	if (player->pitch >= 89.9f)
 		player->pitch = 89.9f;
 	if (player->pitch <= -89.9f)
@@ -91,7 +93,6 @@ void mc_update_player(mc_player* player, mc_player_input* input) {
 			player->velocity[1] *= scale;
 		}
 	} else {
-		;
 		if (SDL_fabsf((player->velocity[0]) < 0.01f))
 			player->velocity[0] = 0.0f;
 		if (SDL_fabsf(player->velocity[2]) < 0.01f)

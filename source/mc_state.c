@@ -26,6 +26,8 @@ bool mc_init_state(mc_state* state) {
 
 	glGenVertexArrays(1, &state->vao);
 
+	state->lastTicks = SDL_GetTicksNS();
+
 	return true;
 }
 
@@ -71,8 +73,8 @@ bool mc_poll_state(mc_state* state, SDL_Event* event) {
 			break;
 
 		case SDL_EVENT_MOUSE_MOTION:
-			state->playerInput.xrel = event->motion.xrel;
-			state->playerInput.yrel = event->motion.yrel;
+			state->playerInput.xrel += event->motion.xrel;
+			state->playerInput.yrel += event->motion.yrel;
 			break;
 		default:
 			break;
@@ -82,13 +84,35 @@ bool mc_poll_state(mc_state* state, SDL_Event* event) {
 }
 
 bool mc_iterate_state(mc_state* state) {
+	Uint64 currentTicks = SDL_GetTicksNS();
+	Uint64 elapsedTicks = currentTicks - state->lastTicks;
+	state->lastTicks = currentTicks;
+	if (elapsedTicks >= MC_MAX_TICKS)
+		elapsedTicks = MC_MAX_TICKS;
+	state->accumulatedTicks += elapsedTicks;
+	state->fpsCount++;
+	state->fpsTimer += elapsedTicks;
+	if (state->fpsTimer >= MC_ONE_SECOND) {
+		state->fps = state->fpsCount;
+		state->fpsCount = 0;
+		state->fpsTimer %= MC_ONE_SECOND;
+		char buffer[32];
+		SDL_snprintf(buffer, sizeof(buffer), "minecraft-clone | %d", state->fps);
+		SDL_SetWindowTitle(state->window, buffer);
+	}
+
+	while (state->accumulatedTicks >= MC_FRAME_TICKS) {
+		state->accumulatedTicks -= MC_FRAME_TICKS;
+		state->ticks++;
+
+		mc_update_player(&state->player, &state->playerInput);
+		state->playerInput.xrel = 0;
+		state->playerInput.yrel = 0;
+	}
+
 	glViewport(0, 0, MC_WINDOW_WIDTH, MC_WINDOW_HEIGHT);
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	mc_update_player(&state->player, &state->playerInput);
-	state->playerInput.xrel = 0;
-	state->playerInput.yrel = 0;
 
 	glBindVertexArray(state->vao);
 	glUseProgram(state->testProgram);
