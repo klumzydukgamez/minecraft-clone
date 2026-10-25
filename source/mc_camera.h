@@ -21,7 +21,7 @@ typedef struct {
 
 	mat4 view;
 	mat4 projection;
-	mat4 viewProjection;
+	mat4 projectionView;
 
 	bool dirty;
 } mc_camera;

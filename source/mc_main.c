@@ -12,6 +12,7 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv) {
 	if (!*appstate) {
 		return SDL_APP_FAILURE;
 	}
+	SDL_memset(*appstate, 0, sizeof(mc_state));
 	mc_state* state = (mc_state*)*appstate;
 	if (!mc_init_state(state)) {
 		return SDL_APP_FAILURE;

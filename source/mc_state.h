@@ -13,6 +13,9 @@ typedef struct {
 	SDL_GLContext glContext;
 
 	mc_camera camera;
+
+	GLuint vao;
+	GLuint testProgram;
 } mc_state;
 
 bool mc_init_state(mc_state* state);

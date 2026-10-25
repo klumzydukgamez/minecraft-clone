@@ -8,7 +8,7 @@ void mc_init_camera(mc_camera* camera) {
 	camera->fov = MC_CAMERA_FOV;
 	camera->targetFov = camera->fov;
 
-	glm_vec3_zero(camera->position);
+	glm_vec3_copy((vec3){0.0f, 0.0f, 3.0f}, camera->position);
 	camera->yaw = -90.0f;
 	camera->pitch = 0.0f;
 	camera->roll = 0.0f;
@@ -19,7 +19,7 @@ void mc_init_camera(mc_camera* camera) {
 
 	glm_mat4_identity(camera->view);
 	glm_mat4_identity(camera->projection);
-	glm_mat4_identity(camera->viewProjection);
+	glm_mat4_identity(camera->projectionView);
 
 	camera->dirty = true;
 }
@@ -71,14 +71,14 @@ void mc_calculate_camera(mc_camera* camera) {
 		camera->projection
 	);
 
-	glm_mat4_mul(camera->projection, camera->view, camera->viewProjection);
+	glm_mat4_mul(camera->projection, camera->view, camera->projectionView);
 
 	camera->dirty = false;
 }
 
 void mc_update_camera(mc_camera* camera, float xrel, float yrel) {
-	camera->yaw += xrel;
-	camera->pitch += yrel;
+	camera->yaw += xrel * 0.25;
+	camera->pitch += -yrel * 0.25;
 
 	if (camera->pitch > 89.0f)
 		camera->pitch = 89.0f;

@@ -21,6 +21,7 @@ endif()
 
 set(MC_THIRD_PARTY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party")
 set(MC_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/source")
+set(MC_ASSETS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/assets")
 
 set(SDL_STATIC ON  CACHE BOOL "" FORCE)
 set(SDL_SHARED OFF CACHE BOOL "" FORCE)
@@ -53,6 +54,11 @@ target_link_libraries(
 	SDL3::SDL3
 	glad
 	cglm
+)
+target_compile_options(
+	mc PRIVATE
+	"-O3"
+	"--embed-dir=${MC_ASSETS_DIR}"
 )
 
 install(
