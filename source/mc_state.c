@@ -37,34 +37,36 @@ bool mc_poll_state(mc_state* state, SDL_Event* event) {
 			return false;
 		case SDL_EVENT_KEY_DOWN:
 			switch (event->key.scancode) {
-				case (SDL_SCANCODE_W):
+				case SDL_SCANCODE_W:
 					state->playerInput.forward = true;
 					break;
-				case (SDL_SCANCODE_S):
+				case SDL_SCANCODE_S:
 					state->playerInput.backward = true;
 					break;
-				case (SDL_SCANCODE_A):
+				case SDL_SCANCODE_A:
 					state->playerInput.left = true;
 					break;
-				case (SDL_SCANCODE_D):
+				case SDL_SCANCODE_D:
 					state->playerInput.right = true;
 					break;
+				case SDL_SCANCODE_ESCAPE:
+					return false;
 				default:
 					break;
 			}
 			break;
 		case SDL_EVENT_KEY_UP:
 			switch (event->key.scancode) {
-				case (SDL_SCANCODE_W):
+				case SDL_SCANCODE_W:
 					state->playerInput.forward = false;
 					break;
-				case (SDL_SCANCODE_S):
+				case SDL_SCANCODE_S:
 					state->playerInput.backward = false;
 					break;
-				case (SDL_SCANCODE_A):
+				case SDL_SCANCODE_A:
 					state->playerInput.left = false;
 					break;
-				case (SDL_SCANCODE_D):
+				case SDL_SCANCODE_D:
 					state->playerInput.right = false;
 					break;
 				default:
@@ -117,7 +119,7 @@ bool mc_iterate_state(mc_state* state) {
 	glBindVertexArray(state->vao);
 	glUseProgram(state->testProgram);
 	glUniformMatrix4fv(glGetUniformLocation(state->testProgram, "uProjectionView"), 1, GL_FALSE, (const GLfloat*)state->player.projectionView);
-	glDrawArrays(GL_TRIANGLES, 0, 3);
+	glDrawArrays(GL_TRIANGLES, 0, 36);
 
 	if (!SDL_GL_SwapWindow(state->window)) {
 		SDL_Log("Failed to swap window buffers.");
