@@ -23,7 +23,7 @@ constexpr int MC_CHUNK_BLOCK_COUNT = MC_CHUNK_WIDTH * MC_CHUNK_WIDTH * MC_CHUNK_
 
 constexpr float MC_PLAYER_FOV = 80;
 constexpr float MC_PLAYER_SENSITIVITY = 1.5f;
-constexpr float MC_PLAYER_HEIGHT = 1.5f;
+constexpr float MC_PLAYER_HEIGHT = 1.6f;
 constexpr float MC_PLAYER_WIDTH = 0.6f;
 constexpr float MC_PLAYER_HALF_WIDTH = MC_PLAYER_WIDTH / 2.0f;
 constexpr float MC_PLAYER_REACH = 5.0f;
@@ -35,5 +35,8 @@ constexpr float MC_PLAYER_AIR_FRICTION = 0.91f;
 constexpr float MC_PLAYER_JUMP_VELOCITY = 0.13f; /* 0.12f */
 constexpr float MC_PLAYER_GRAVITY = -0.006f; /* -0.007f */
 constexpr float MC_PLAYER_TERMINAL_VELOCITY = -0.4f; /* -0.6f */
+
+constexpr float MC_PLAYER_CROUCH_HEIGHT = 1.1f;
+constexpr float MC_PLAYER_CROUCH_ACCELERATION = 0.4f;
 
 #endif /* MC_CONSTANTS_H */

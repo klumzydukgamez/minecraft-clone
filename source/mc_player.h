@@ -16,6 +16,8 @@ typedef struct {
 	vec3 position;
 	vec3 velocity;
 	mc_player_mode mode;
+	mc_block block;
+	bool crouched;
 	bool grounded;
 
 	float fov;
@@ -56,6 +58,9 @@ typedef struct {
 	int x;
 	int y;
 	int z;
+	int nx;
+	int ny;
+	int nz;
 	bool hit;
 } mc_player_raycast;
 

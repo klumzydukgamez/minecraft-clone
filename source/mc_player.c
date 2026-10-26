@@ -5,9 +5,11 @@
 #include "mc_constants.h"
 
 void mc_init_player(mc_player* player) {
-	glm_vec3_copy((vec3){MC_CHUNK_WIDTH / 2.0f, MC_CHUNK_HEIGHT / 2.0f, MC_CHUNK_WIDTH / 2.0f}, player->position);
+	glm_vec3_copy((vec3){MC_CHUNK_WIDTH / 2.0f, MC_CHUNK_HEIGHT / 3.0f, MC_CHUNK_WIDTH / 2.0f}, player->position);
 	glm_vec3_zero(player->velocity);
 	player->mode = MC_SPECTATOR_MODE;
+	player->block = MC_DIRT_BLOCK;
+	player->crouched = false;
 	player->grounded = false;
 
 	player->fov = MC_PLAYER_FOV;
@@ -97,10 +99,11 @@ void mc_raycast_player(mc_player* player, mc_player_raycast* raycast, mc_chunk* 
 	float tdz = SDL_fabsf(1.0f / dz);
 
 	float dist = 0.0f;
+	int axis = 0;
 
 	while (dist < MC_PLAYER_REACH) {
-		int lx = x & (MC_WINDOW_WIDTH - 1);
-		int lz = z & (MC_WINDOW_WIDTH - 1);
+		int lx = x & (MC_CHUNK_WIDTH - 1);
+		int lz = z & (MC_CHUNK_WIDTH - 1);
 		if (y < 0 || y >= MC_CHUNK_HEIGHT)
 			return;
 		mc_block block = chunk->blocks[mc_block_index(lx, y, lz)];
@@ -108,6 +111,15 @@ void mc_raycast_player(mc_player* player, mc_player_raycast* raycast, mc_chunk* 
 			raycast->x = x;
 			raycast->y = y;
 			raycast->z = z;
+			raycast->nx = 0;
+			if (axis == 0)
+				raycast->nx = -sx;
+			raycast->ny = 0;
+			if (axis == 1)
+				raycast->ny = -sy;
+			raycast->nz = 0;
+			if (axis == 2)
+				raycast->nz = -sz;
 			raycast->hit = true;
 			return;
 		}
@@ -117,20 +129,24 @@ void mc_raycast_player(mc_player* player, mc_player_raycast* raycast, mc_chunk* 
 				dist = tmx;
 				tmx += tdx;
 				x += sx;
+				axis = 0;
 			} else {
 				dist = tmz;
 				tmz += tdz;
 				z += sz;
+				axis = 2;
 			}
 		} else {
 			if (tmy < tmz) {
 				dist = tmy;
 				tmy += tdy;
 				y += sy;
+				axis = 1;
 			} else {
 				dist = tmz;
 				tmz += tdz;
 				z += sz;
+				axis = 2;
 			}
 		}
 	}
@@ -200,6 +216,8 @@ void mc_update_survival_player(mc_player* player, mc_player_input* input, mc_chu
 	if (glm_vec3_norm2(direction) > 0.0f) {
 		glm_vec3_normalize(direction);
 		float accel = player->grounded ? MC_PLAYER_ACCELERATION : (MC_PLAYER_ACCELERATION * 0.2f);
+		if (player->crouched)
+			accel *= MC_PLAYER_CROUCH_ACCELERATION;
 		player->velocity[0] += direction[0] * accel;
 		player->velocity[2] += direction[2] * accel;
 	}
@@ -208,9 +226,9 @@ void mc_update_survival_player(mc_player* player, mc_player_input* input, mc_chu
 	player->velocity[0] *= friction;
 	player->velocity[2] *= friction;
 
-	float speedH = SDL_sqrtf(player->velocity[0] * player->velocity[0] + player->velocity[2] * player->velocity[2]);
-	if (speedH > MC_PLAYER_MAX_SPEED) {
-		float scale = MC_PLAYER_MAX_SPEED / speedH;
+	float length = SDL_sqrtf(player->velocity[0] * player->velocity[0] + player->velocity[2] * player->velocity[2]);
+	if (length > MC_PLAYER_MAX_SPEED) {
+		float scale = MC_PLAYER_MAX_SPEED / length;
 		player->velocity[0] *= scale;
 		player->velocity[2] *= scale;
 	}
@@ -223,12 +241,28 @@ void mc_update_survival_player(mc_player* player, mc_player_input* input, mc_chu
 	if (mc_collide_player(player, chunk)) {
 		player->position[0] -= player->velocity[0];
 		player->velocity[0] = 0.0f;
+	} else if (player->crouched && player->grounded) {
+		player->position[1] -= 1.0f;
+		bool grounded = mc_collide_player(player, chunk);
+		player->position[1] += 1.0f;
+		if (!grounded) {
+			player->position[0] -= player->velocity[0];
+			player->velocity[0] = 0.0f;
+		}
 	}
 
 	player->position[2] += player->velocity[2];
 	if (mc_collide_player(player, chunk)) {
 		player->position[2] -= player->velocity[2];
 		player->velocity[2] = 0.0f;
+	} else if (player->crouched && player->grounded) {
+		player->position[1] -= 1.0f;
+		bool grounded = mc_collide_player(player, chunk);
+		player->position[1] += 1.0f;
+		if (!grounded) {
+			player->position[2] -= player->velocity[2];
+			player->velocity[2] = 0.0f;
+		}
 	}
 
 	player->grounded = false;
@@ -246,6 +280,14 @@ void mc_update_survival_player(mc_player* player, mc_player_input* input, mc_chu
 	if (input->up && player->grounded) {
 		player->velocity[1] = MC_PLAYER_JUMP_VELOCITY;
 		player->grounded = false;
+	}
+
+	if (input->down && player->grounded) {
+		player->targetHeight = MC_PLAYER_CROUCH_HEIGHT;
+		player->crouched = true;
+	} else {
+		player->targetHeight = MC_PLAYER_HEIGHT;
+		player->crouched = false;
 	}
 
 	if (SDL_fabsf(player->height - player->targetHeight) >= 0.01f)
@@ -268,15 +310,37 @@ void mc_update_survival_player(mc_player* player, mc_player_input* input, mc_chu
 	glm_perspective(glm_rad(player->fov), MC_WINDOW_RATIO, 0.01f, 100.0f, player->projection);
 	glm_mat4_mul(player->projection, player->view, player->projectionView);
 
+	if (input->lmb) {
+		mc_player_raycast raycast;
+		mc_raycast_player(player, &raycast, chunk);
+		if (raycast.hit) {
+			int lx = raycast.x & (MC_CHUNK_WIDTH - 1);
+			int lz = raycast.z & (MC_CHUNK_HEIGHT - 1);
+			chunk->blocks[mc_block_index(lx, raycast.y, lz)] = MC_AIR_BLOCK;
+			input->lmb = false;
+			chunk->dirty = true;
+		}
+	}
+
 	if (input->rmb) {
 		mc_player_raycast raycast;
 		mc_raycast_player(player, &raycast, chunk);
 		if (raycast.hit) {
-			int lx = raycast.x & (MC_WINDOW_WIDTH - 1);
-			int lz = raycast.z & (MC_WINDOW_HEIGHT - 1);
-			chunk->blocks[mc_block_index(lx, raycast.y, lz)] = MC_AIR_BLOCK;
-			input->rmb = false;
-			chunk->dirty = true;
+			int x = raycast.x + raycast.nx;
+			int y = raycast.y + raycast.ny;
+			int z = raycast.z + raycast.nz;
+			if (y >= 0 && y <= MC_CHUNK_HEIGHT) {
+				int lx = x & (MC_CHUNK_WIDTH - 1);
+				int lz = z & (MC_CHUNK_WIDTH - 1);
+				mc_block old = chunk->blocks[mc_block_index(lx, y, lz)];
+				chunk->blocks[mc_block_index(lx, y, lz)] = player->block;
+				if (mc_collide_player(player, chunk)) {
+					chunk->blocks[mc_block_index(lx, y, lz)] = old;
+				} else {
+					input->rmb = false;
+					chunk->dirty = true;
+				}
+			}
 		}
 	}
 }

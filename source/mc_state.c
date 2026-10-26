@@ -82,6 +82,15 @@ bool mc_poll_state(mc_state* state, SDL_Event* event) {
 					if (state->player.mode > MC_SPECTATOR_MODE)
 						state->player.mode = MC_SURVIVAL_MODE;
 					break;
+				case SDL_SCANCODE_1:
+					state->player.block = MC_DIRT_BLOCK;
+					break;
+				case SDL_SCANCODE_2:
+					state->player.block = MC_GRASS_BLOCK;
+					break;
+				case SDL_SCANCODE_3:
+					state->player.block = MC_STONE_BLOCK;
+					break;
 				case SDL_SCANCODE_ESCAPE:
 					return false;
 				default:
