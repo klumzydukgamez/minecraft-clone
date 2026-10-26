@@ -47,10 +47,6 @@ bool mc_init_state(mc_state* state) {
 		SDL_Log("Failed to init chunk.");
 		return false;
 	}
-	if (!mc_update_chunk(&state->chunk)) {
-		SDL_Log("Failed to update chunk.");
-		return false;
-	}
 
 	mc_init_player(&state->player);
 
@@ -121,6 +117,30 @@ bool mc_poll_state(mc_state* state, SDL_Event* event) {
 			state->playerInput.xrel += event->motion.xrel;
 			state->playerInput.yrel += event->motion.yrel;
 			break;
+		case SDL_EVENT_MOUSE_BUTTON_DOWN:
+			switch (event->button.button) {
+				case SDL_BUTTON_LEFT:
+					state->playerInput.lmb = true;
+					break;
+				case SDL_BUTTON_RIGHT:
+					state->playerInput.rmb = true;
+					break;
+				default:
+					break;
+			}
+			break;
+		case SDL_EVENT_MOUSE_BUTTON_UP:
+			switch (event->button.button) {
+				case SDL_BUTTON_LEFT:
+					state->playerInput.lmb = false;
+					break;
+				case SDL_BUTTON_RIGHT:
+					state->playerInput.rmb = false;
+					break;
+				default:
+					break;
+			}
+
 		default:
 			break;
 	}
@@ -150,9 +170,13 @@ bool mc_iterate_state(mc_state* state) {
 		state->accumulatedTicks -= MC_FRAME_TICKS;
 		state->ticks++;
 
-		mc_update_player(&state->player, &state->playerInput);
+		mc_update_player(&state->player, &state->playerInput, &state->chunk);
 		state->playerInput.xrel = 0;
 		state->playerInput.yrel = 0;
+
+		if (!mc_update_chunk(&state->chunk)) {
+			SDL_Log("Failed to update chunk.");
+		}
 	}
 
 	glViewport(0, 0, MC_WINDOW_WIDTH, MC_WINDOW_HEIGHT);

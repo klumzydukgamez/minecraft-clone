@@ -8,20 +8,23 @@
 #include "mc_block.h"
 
 #define MC_CHUNK_VERTEX(buffer, index, vx, vy, vz, nx, ny, nz, u, v) \
-	(buffer)[(index)++] = (GLfloat)(vx);                             \
-	(buffer)[(index)++] = (GLfloat)(vy);                             \
-	(buffer)[(index)++] = (GLfloat)(vz);                             \
-	(buffer)[(index)++] = (GLfloat)(nx);                             \
-	(buffer)[(index)++] = (GLfloat)(ny);                             \
-	(buffer)[(index)++] = (GLfloat)(nz);                             \
-	(buffer)[(index)++] = (GLfloat)(u);                              \
-	(buffer)[(index)++] = (GLfloat)(v);
+	do {                                                             \
+		(buffer)[(index)++] = (GLfloat)(vx);                         \
+		(buffer)[(index)++] = (GLfloat)(vy);                         \
+		(buffer)[(index)++] = (GLfloat)(vz);                         \
+		(buffer)[(index)++] = (GLfloat)(nx);                         \
+		(buffer)[(index)++] = (GLfloat)(ny);                         \
+		(buffer)[(index)++] = (GLfloat)(nz);                         \
+		(buffer)[(index)++] = (GLfloat)(u);                          \
+		(buffer)[(index)++] = (GLfloat)(v);                          \
+	} while (0)
 
 typedef struct {
 	mc_block blocks[MC_CHUNK_BLOCK_COUNT];
 	GLuint vertexArray;
 	GLuint vertexBuffer;
 	int vertexCount;
+	bool dirty;
 } mc_chunk;
 
 int mc_block_index(int x, int y, int z);

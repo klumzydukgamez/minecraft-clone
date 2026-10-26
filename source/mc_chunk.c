@@ -27,12 +27,16 @@ bool mc_init_chunk(mc_chunk* chunk) {
 					block = MC_GRASS_BLOCK;
 				else if (y < 15 & y > 10)
 					block = MC_DIRT_BLOCK;
-				else
+				else if (y <= 10)
 					block = MC_STONE_BLOCK;
+				else
+					block = MC_AIR_BLOCK;
 				chunk->blocks[mc_block_index(x, y, z)] = block;
 			}
 		}
 	}
+
+	chunk->blocks[mc_block_index(8, 16, 8)] = MC_GRASS_BLOCK;
 
 	chunk->vertexCount = 0;
 
@@ -47,11 +51,15 @@ bool mc_init_chunk(mc_chunk* chunk) {
 		return false;
 	}
 	chunk->vertexCount = 0;
+	chunk->dirty = true;
 
 	return true;
 }
 
 bool mc_update_chunk(mc_chunk* chunk) {
+	if (!chunk->dirty)
+		return true;
+
 	void* memory = SDL_malloc(MC_CHUNK_BLOCK_COUNT * 6 * 6 * 8 * sizeof(GLfloat));
 	if (!memory) {
 		SDL_Log("Failed to allocate chunk vertex staging buffer.");
@@ -167,6 +175,7 @@ bool mc_update_chunk(mc_chunk* chunk) {
 		}
 	}
 	chunk->vertexCount = i / 8;
+	chunk->dirty = false;
 
 	glBindVertexArray(chunk->vertexArray);
 	glBindBuffer(GL_ARRAY_BUFFER, chunk->vertexBuffer);

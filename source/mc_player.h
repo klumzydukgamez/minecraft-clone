@@ -5,10 +5,10 @@
 #define MC_PLAYER_H
 
 #include "mc_third_party.h"
+#include "mc_chunk.h"
 
 typedef enum : uint32_t {
 	MC_SURVIVAL_MODE,
-	MC_CREATIVE_MODE,
 	MC_SPECTATOR_MODE
 } mc_player_mode;
 
@@ -16,6 +16,7 @@ typedef struct {
 	vec3 position;
 	vec3 velocity;
 	mc_player_mode mode;
+	bool grounded;
 
 	float fov;
 	float targetFov;
@@ -47,12 +48,24 @@ typedef struct {
 	bool right;
 	bool up;
 	bool down;
+	bool lmb;
+	bool rmb;
 } mc_player_input;
 
+typedef struct {
+	int x;
+	int y;
+	int z;
+	bool hit;
+} mc_player_raycast;
+
 void mc_init_player(mc_player* player);
-void mc_update_player(mc_player* player, mc_player_input* input);
-void mc_update_survival_player(mc_player* player, mc_player_input* input);
-void mc_update_creative_player(mc_player* player, mc_player_input* input);
+
+bool mc_collide_player(mc_player* player, mc_chunk* chunk);
+void mc_raycast_player(mc_player* player, mc_player_raycast* raycast, mc_chunk* chunk);
+
+void mc_update_player(mc_player* player, mc_player_input* input, mc_chunk* chunk);
+void mc_update_survival_player(mc_player* player, mc_player_input* input, mc_chunk* chunk);
 void mc_update_spectator_player(mc_player* player, mc_player_input* input);
 
 #endif /* MC_PLAYER_H */
