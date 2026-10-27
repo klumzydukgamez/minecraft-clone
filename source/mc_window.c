@@ -22,6 +22,14 @@ bool mc_init_window(SDL_Window** window, SDL_GLContext* glContext) {
 		SDL_Log("Failed to set GL attribute.");
 		return false;
 	}
+	if (!SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1)) {
+		SDL_Log("Failed to set GL attribute.");
+		return false;
+	}
+	if (!SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4)) {
+		SDL_Log("Failed to set GL attribute.");
+		return false;
+	}
 
 	*window = SDL_CreateWindow("minecraft-clone", MC_WINDOW_WIDTH, MC_WINDOW_HEIGHT, SDL_WINDOW_OPENGL);
 	if (!*window) {

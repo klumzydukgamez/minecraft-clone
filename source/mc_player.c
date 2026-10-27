@@ -5,7 +5,14 @@
 #include "mc_constants.h"
 
 void mc_init_player(mc_player* player) {
-	glm_vec3_copy((vec3){MC_CHUNK_WIDTH / 2.0f, MC_CHUNK_HEIGHT / 3.0f, MC_CHUNK_WIDTH / 2.0f}, player->position);
+	glm_vec3_copy(
+		(vec3){
+			(MC_WORLD_CHUNKS_WIDTH * MC_CHUNK_WIDTH) / 2.0f,
+			16.0f,
+			(MC_WORLD_CHUNKS_WIDTH * MC_CHUNK_WIDTH) / 2.0f
+		},
+		player->position
+	);
 	glm_vec3_zero(player->velocity);
 	player->mode = MC_SPECTATOR_MODE;
 	player->block = MC_DIRT_BLOCK;
@@ -33,7 +40,7 @@ void mc_init_player(mc_player* player) {
 	glm_mat4_identity(player->projectionView);
 }
 
-bool mc_collide_player(mc_player* player, mc_chunk* chunk) {
+bool mc_collide_player(mc_player* player, mc_world* world) {
 	int mnx = (int)SDL_floorf(player->position[0] - MC_PLAYER_HALF_WIDTH);
 	int mxx = (int)SDL_floorf(player->position[0] + MC_PLAYER_HALF_WIDTH);
 	int mny = (int)SDL_floorf(player->position[1]);
@@ -46,7 +53,7 @@ bool mc_collide_player(mc_player* player, mc_chunk* chunk) {
 			int lz = z & (MC_WINDOW_WIDTH - 1);
 			for (int x = mnx; x <= mxx; x++) {
 				int lx = x & (MC_WINDOW_WIDTH - 1);
-				mc_block block = chunk->blocks[mc_block_index(lx, y, lz)];
+				mc_block block = mc_get_world_block(world, x, y, z);
 				if (block != MC_AIR_BLOCK) {
 					if (player->position[0] + MC_PLAYER_HALF_WIDTH > (float)x && player->position[0] - MC_PLAYER_HALF_WIDTH < (float)x + 1.0f &&
 						player->position[1] + player->height > (float)y && player->position[1] < (float)y + 1.0f &&
@@ -60,7 +67,7 @@ bool mc_collide_player(mc_player* player, mc_chunk* chunk) {
 	return false;
 }
 
-void mc_raycast_player(mc_player* player, mc_player_raycast* raycast, mc_chunk* chunk) {
+void mc_raycast_player(mc_player* player, mc_player_raycast* raycast, mc_world* world) {
 	raycast->hit = false;
 
 	vec3 eye;
@@ -102,11 +109,9 @@ void mc_raycast_player(mc_player* player, mc_player_raycast* raycast, mc_chunk* 
 	int axis = 0;
 
 	while (dist < MC_PLAYER_REACH) {
-		int lx = x & (MC_CHUNK_WIDTH - 1);
-		int lz = z & (MC_CHUNK_WIDTH - 1);
 		if (y < 0 || y >= MC_CHUNK_HEIGHT)
 			return;
-		mc_block block = chunk->blocks[mc_block_index(lx, y, lz)];
+		mc_block block = mc_get_world_block(world, x, y, z);
 		if (block != MC_AIR_BLOCK) {
 			raycast->x = x;
 			raycast->y = y;
@@ -152,10 +157,10 @@ void mc_raycast_player(mc_player* player, mc_player_raycast* raycast, mc_chunk* 
 	}
 }
 
-void mc_update_player(mc_player* player, mc_player_input* input, mc_chunk* chunk) {
+void mc_update_player(mc_player* player, mc_player_input* input, mc_world* world) {
 	switch (player->mode) {
 		case MC_SURVIVAL_MODE:
-			mc_update_survival_player(player, input, chunk);
+			mc_update_survival_player(player, input, world);
 			break;
 		case MC_SPECTATOR_MODE:
 			mc_update_spectator_player(player, input);
@@ -166,7 +171,7 @@ void mc_update_player(mc_player* player, mc_player_input* input, mc_chunk* chunk
 	}
 }
 
-void mc_update_survival_player(mc_player* player, mc_player_input* input, mc_chunk* chunk) {
+void mc_update_survival_player(mc_player* player, mc_player_input* input, mc_world* world) {
 	if (SDL_fabsf(player->sensitivity - player->targetSensitivity) >= 0.001f)
 		player->sensitivity = glm_lerp(player->sensitivity, player->targetSensitivity, 0.25f);
 	else
@@ -238,12 +243,12 @@ void mc_update_survival_player(mc_player* player, mc_player_input* input, mc_chu
 		player->velocity[1] = MC_PLAYER_TERMINAL_VELOCITY;
 
 	player->position[0] += player->velocity[0];
-	if (mc_collide_player(player, chunk)) {
+	if (mc_collide_player(player, world)) {
 		player->position[0] -= player->velocity[0];
 		player->velocity[0] = 0.0f;
 	} else if (player->crouched && player->grounded) {
 		player->position[1] -= 1.0f;
-		bool grounded = mc_collide_player(player, chunk);
+		bool grounded = mc_collide_player(player, world);
 		player->position[1] += 1.0f;
 		if (!grounded) {
 			player->position[0] -= player->velocity[0];
@@ -252,12 +257,12 @@ void mc_update_survival_player(mc_player* player, mc_player_input* input, mc_chu
 	}
 
 	player->position[2] += player->velocity[2];
-	if (mc_collide_player(player, chunk)) {
+	if (mc_collide_player(player, world)) {
 		player->position[2] -= player->velocity[2];
 		player->velocity[2] = 0.0f;
 	} else if (player->crouched && player->grounded) {
 		player->position[1] -= 1.0f;
-		bool grounded = mc_collide_player(player, chunk);
+		bool grounded = mc_collide_player(player, world);
 		player->position[1] += 1.0f;
 		if (!grounded) {
 			player->position[2] -= player->velocity[2];
@@ -267,7 +272,7 @@ void mc_update_survival_player(mc_player* player, mc_player_input* input, mc_chu
 
 	player->grounded = false;
 	player->position[1] += player->velocity[1];
-	if (mc_collide_player(player, chunk)) {
+	if (mc_collide_player(player, world)) {
 		float old_vel_y = player->velocity[1];
 		player->position[1] -= old_vel_y;
 		player->velocity[1] = 0.0f;
@@ -307,39 +312,32 @@ void mc_update_survival_player(mc_player* player, mc_player_input* input, mc_chu
 	else
 		player->fov = player->targetFov;
 
-	glm_perspective(glm_rad(player->fov), MC_WINDOW_RATIO, 0.01f, 100.0f, player->projection);
+	glm_perspective(glm_rad(player->fov), MC_WINDOW_RATIO, 0.1f, 1000.0f, player->projection);
 	glm_mat4_mul(player->projection, player->view, player->projectionView);
 
 	if (input->lmb) {
 		mc_player_raycast raycast;
-		mc_raycast_player(player, &raycast, chunk);
+		mc_raycast_player(player, &raycast, world);
 		if (raycast.hit) {
-			int lx = raycast.x & (MC_CHUNK_WIDTH - 1);
-			int lz = raycast.z & (MC_CHUNK_HEIGHT - 1);
-			chunk->blocks[mc_block_index(lx, raycast.y, lz)] = MC_AIR_BLOCK;
+			mc_set_world_block(world, raycast.x, raycast.y, raycast.z, MC_AIR_BLOCK);
 			input->lmb = false;
-			chunk->dirty = true;
 		}
 	}
 
 	if (input->rmb) {
 		mc_player_raycast raycast;
-		mc_raycast_player(player, &raycast, chunk);
+		mc_raycast_player(player, &raycast, world);
 		if (raycast.hit) {
 			int x = raycast.x + raycast.nx;
 			int y = raycast.y + raycast.ny;
 			int z = raycast.z + raycast.nz;
 			if (y >= 0 && y <= MC_CHUNK_HEIGHT) {
-				int lx = x & (MC_CHUNK_WIDTH - 1);
-				int lz = z & (MC_CHUNK_WIDTH - 1);
-				mc_block old = chunk->blocks[mc_block_index(lx, y, lz)];
-				chunk->blocks[mc_block_index(lx, y, lz)] = player->block;
-				if (mc_collide_player(player, chunk)) {
-					chunk->blocks[mc_block_index(lx, y, lz)] = old;
-				} else {
+				mc_block old = mc_get_world_block(world, x, y, z);
+				mc_set_world_block(world, x, y, z, player->block);
+				if (mc_collide_player(player, world))
+					mc_set_world_block(world, x, y, z, old);
+				else
 					input->rmb = false;
-					chunk->dirty = true;
-				}
 			}
 		}
 	}
@@ -440,6 +438,6 @@ void mc_update_spectator_player(mc_player* player, mc_player_input* input) {
 	else
 		player->fov = player->targetFov;
 
-	glm_perspective(glm_rad(player->fov), MC_WINDOW_RATIO, 0.01f, 100.0f, player->projection);
+	glm_perspective(glm_rad(player->fov), MC_WINDOW_RATIO, 0.1f, 1000.0f, player->projection);
 	glm_mat4_mul(player->projection, player->view, player->projectionView);
 }

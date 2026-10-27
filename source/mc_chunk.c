@@ -2,6 +2,44 @@
  * See LICENSE.md for full terms. */
 
 #include "mc_chunk.h"
+#include "mc_assets.h"
+#include "mc_texture.h"
+#include "mc_shader.h"
+
+bool mc_init_chunk_shader(mc_chunk_shader* shader) {
+	if (!mc_init_asset_png(mc_asset_blocks_png, mc_asset_blocks_png_size, &shader->blockTexture)) {
+		SDL_Log("Failed to init asset (mc_blocks.png).");
+		return false;
+	}
+	if (!mc_compile_shader(mc_asset_chunk_vert, mc_asset_chunk_frag, &shader->program)) {
+		SDL_Log("Failed to compile shader (mc_test.vert, mc_test.frag)");
+		return false;
+	}
+	shader->uProjectionView = glGetUniformLocation(shader->program, "uProjectionView");
+	if (shader->uProjectionView == -1) {
+		SDL_Log("Failed to get GL uniform location (uProjectionView)");
+		return false;
+	}
+	shader->uTexture = glGetUniformLocation(shader->program, "uTexture");
+	if (shader->uTexture == -1) {
+		SDL_Log("Failed to get GL uniform location (uTexture).");
+		return false;
+	}
+	shader->uModel = glGetUniformLocation(shader->program, "uModel");
+	if (shader->uModel) {
+		SDL_Log("Failed to get GL uniform location (uModel).");
+		return false;
+	}
+
+	return true;
+}
+
+void mc_cleanup_chunk_shader(mc_chunk_shader* shader) {
+	if (shader->program)
+		glDeleteProgram(shader->program);
+	if (shader->blockTexture)
+		glDeleteTextures(1, &shader->blockTexture);
+}
 
 int mc_block_index(int x, int y, int z) {
 	return x | (z << 4) | (y << 8);
@@ -14,7 +52,10 @@ void mc_face_uvs(int x, int y, float* u0, float* u1, float* v0, float* v1) {
 	*v1 = *v0 + MC_BLOCK_FACE_V;
 }
 
-bool mc_init_chunk(mc_chunk* chunk) {
+bool mc_init_chunk(mc_chunk* chunk, int x, int z) {
+	chunk->x = x;
+	chunk->z = z;
+
 	for (int i = 0; i < MC_CHUNK_BLOCK_COUNT; i++) {
 		chunk->blocks[i] = MC_AIR_BLOCK;
 	}
@@ -36,8 +77,6 @@ bool mc_init_chunk(mc_chunk* chunk) {
 		}
 	}
 
-	chunk->blocks[mc_block_index(8, 16, 8)] = MC_GRASS_BLOCK;
-
 	chunk->vertexCount = 0;
 
 	glGenVertexArrays(1, &chunk->vertexArray);
@@ -56,9 +95,12 @@ bool mc_init_chunk(mc_chunk* chunk) {
 	return true;
 }
 
-bool mc_update_chunk(mc_chunk* chunk) {
+bool mc_update_chunk(mc_chunk* chunk, mc_chunk* left, mc_chunk* right, mc_chunk* front, mc_chunk* back) {
 	if (!chunk->dirty)
 		return true;
+
+	glm_mat4_identity(chunk->model);
+	glm_translate(chunk->model, (vec3){chunk->x * MC_CHUNK_WIDTH, 0, chunk->z * MC_CHUNK_WIDTH});
 
 	void* memory = SDL_malloc(MC_CHUNK_BLOCK_COUNT * 6 * 6 * 8 * sizeof(GLfloat));
 	if (!memory) {
@@ -118,7 +160,12 @@ bool mc_update_chunk(mc_chunk* chunk) {
 						break;
 				}
 				/* front */
-				if (z == MC_CHUNK_WIDTH - 1 || chunk->blocks[mc_block_index(x, y, z + 1)] == MC_AIR_BLOCK) {
+				bool df = false;
+				if (z < MC_CHUNK_WIDTH - 1)
+					df = (chunk->blocks[mc_block_index(x, y, z + 1)] == MC_AIR_BLOCK);
+				else
+					df = (front == nullptr || front->blocks[mc_block_index(x, y, 0)] == MC_AIR_BLOCK);
+				if (df) {
 					MC_CHUNK_VERTEX(buffer, i, x + 0, y + 0, z + 1, 0, 0, 1, fu0, fv1);
 					MC_CHUNK_VERTEX(buffer, i, x + 1, y + 0, z + 1, 0, 0, 1, fu1, fv1);
 					MC_CHUNK_VERTEX(buffer, i, x + 1, y + 1, z + 1, 0, 0, 1, fu1, fv0);
@@ -127,7 +174,12 @@ bool mc_update_chunk(mc_chunk* chunk) {
 					MC_CHUNK_VERTEX(buffer, i, x + 0, y + 0, z + 1, 0, 0, 1, fu0, fv1);
 				}
 				/* back */
-				if (z == 0 || chunk->blocks[mc_block_index(x, y, z - 1)] == MC_AIR_BLOCK) {
+				bool db = false;
+				if (z > 0)
+					db = (chunk->blocks[mc_block_index(x, y, z - 1)] == MC_AIR_BLOCK);
+				else
+					db = (back == nullptr || back->blocks[mc_block_index(x, y, MC_CHUNK_WIDTH - 1)] == MC_AIR_BLOCK);
+				if (db) {
 					MC_CHUNK_VERTEX(buffer, i, x + 1, y + 0, z + 0, 0, 0, -1, bu0, bv1);
 					MC_CHUNK_VERTEX(buffer, i, x + 0, y + 0, z + 0, 0, 0, -1, bu1, bv1);
 					MC_CHUNK_VERTEX(buffer, i, x + 0, y + 1, z + 0, 0, 0, -1, bu1, bv0);
@@ -136,7 +188,12 @@ bool mc_update_chunk(mc_chunk* chunk) {
 					MC_CHUNK_VERTEX(buffer, i, x + 1, y + 0, z + 0, 0, 0, -1, bu0, bv1);
 				}
 				/* left */
-				if (x == 0 || chunk->blocks[mc_block_index(x - 1, y, z)] == MC_AIR_BLOCK) {
+				bool dl = false;
+				if (x > 0)
+					dl = (chunk->blocks[mc_block_index(x - 1, y, z)] == MC_AIR_BLOCK);
+				else
+					dl = (left == nullptr || left->blocks[mc_block_index(MC_CHUNK_WIDTH - 1, y, z)] == MC_AIR_BLOCK);
+				if (dl) {
 					MC_CHUNK_VERTEX(buffer, i, x + 0, y + 0, z + 0, -1, 0, 0, lu0, lv1);
 					MC_CHUNK_VERTEX(buffer, i, x + 0, y + 0, z + 1, -1, 0, 0, lu1, lv1);
 					MC_CHUNK_VERTEX(buffer, i, x + 0, y + 1, z + 1, -1, 0, 0, lu1, lv0);
@@ -145,7 +202,12 @@ bool mc_update_chunk(mc_chunk* chunk) {
 					MC_CHUNK_VERTEX(buffer, i, x + 0, y + 0, z + 0, -1, 0, 0, lu0, lv1);
 				}
 				/* right */
-				if (x == MC_CHUNK_WIDTH - 1 || chunk->blocks[mc_block_index(x + 1, y, z)] == MC_AIR_BLOCK) {
+				bool dr = false;
+				if (x < MC_CHUNK_WIDTH - 1)
+					dr = (chunk->blocks[mc_block_index(x + 1, y, z)] == MC_AIR_BLOCK);
+				else
+					dr = (right == nullptr || right->blocks[mc_block_index(0, y, z)] == MC_AIR_BLOCK);
+				if (dr) {
 					MC_CHUNK_VERTEX(buffer, i, x + 1, y + 0, z + 1, 1, 0, 0, ru0, rv1);
 					MC_CHUNK_VERTEX(buffer, i, x + 1, y + 0, z + 0, 1, 0, 0, ru1, rv1);
 					MC_CHUNK_VERTEX(buffer, i, x + 1, y + 1, z + 0, 1, 0, 0, ru1, rv0);
@@ -191,6 +253,13 @@ bool mc_update_chunk(mc_chunk* chunk) {
 
 	SDL_free(buffer);
 	return true;
+}
+
+void mc_draw_chunk(mc_chunk* chunk) {
+	glBindVertexArray(chunk->vertexArray);
+	glDrawArrays(GL_TRIANGLES, 0, chunk->vertexCount);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
 }
 
 void mc_cleanup_chunk(mc_chunk* chunk) {

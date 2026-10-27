@@ -21,6 +21,9 @@ constexpr int MC_CHUNK_WIDTH = 16;
 constexpr int MC_CHUNK_HEIGHT = 256;
 constexpr int MC_CHUNK_BLOCK_COUNT = MC_CHUNK_WIDTH * MC_CHUNK_WIDTH * MC_CHUNK_HEIGHT;
 
+constexpr int MC_WORLD_CHUNK_RADIUS = 32;
+constexpr int MC_WORLD_CHUNKS_WIDTH = (MC_WORLD_CHUNK_RADIUS * 2) + 1;
+
 constexpr float MC_PLAYER_FOV = 80;
 constexpr float MC_PLAYER_SENSITIVITY = 1.5f;
 constexpr float MC_PLAYER_HEIGHT = 1.6f;

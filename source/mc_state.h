@@ -8,6 +8,7 @@
 #include "mc_constants.h"
 #include "mc_player.h"
 #include "mc_chunk.h"
+#include "mc_world.h"
 
 typedef struct {
 	SDL_Window* window;
@@ -21,13 +22,9 @@ typedef struct {
 	uint32_t fpsCount;
 	uint32_t fps;
 
-	GLuint blockTexture;
+	mc_chunk_shader chunkShader;
 
-	GLuint chunkProgram;
-	GLint chunkUniformProjectionViewLocation;
-	GLint chunkUniformTextureLocation;
-
-	mc_chunk chunk;
+	mc_world world;
 
 	mc_player_input playerInput;
 	mc_player player;

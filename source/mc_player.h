@@ -5,7 +5,7 @@
 #define MC_PLAYER_H
 
 #include "mc_third_party.h"
-#include "mc_chunk.h"
+#include "mc_world.h"
 
 typedef enum : uint32_t {
 	MC_SURVIVAL_MODE,
@@ -66,11 +66,11 @@ typedef struct {
 
 void mc_init_player(mc_player* player);
 
-bool mc_collide_player(mc_player* player, mc_chunk* chunk);
-void mc_raycast_player(mc_player* player, mc_player_raycast* raycast, mc_chunk* chunk);
+bool mc_collide_player(mc_player* player, mc_world* world);
+void mc_raycast_player(mc_player* player, mc_player_raycast* raycast, mc_world* world);
 
-void mc_update_player(mc_player* player, mc_player_input* input, mc_chunk* chunk);
-void mc_update_survival_player(mc_player* player, mc_player_input* input, mc_chunk* chunk);
+void mc_update_player(mc_player* player, mc_player_input* input, mc_world* world);
+void mc_update_survival_player(mc_player* player, mc_player_input* input, mc_world* world);
 void mc_update_spectator_player(mc_player* player, mc_player_input* input);
 
 #endif /* MC_PLAYER_H */
